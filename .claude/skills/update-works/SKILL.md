@@ -1,7 +1,7 @@
 ---
 name: update-works
 description: Refresh the publication list in works.html from Scopus. Use when the user asks to update their papers/publications, sync works.html with Scopus, add newly published articles, or refresh the research page. Pulls journal articles + reviews (no conference papers) for Ismaïl Saadi via the Scopus MCP, rewrites the year-grouped list in works.html, then commits and pushes.
-allowed-tools: Read, Edit, Write, Bash, mcp__scopus-assistant__search_scopus, mcp__scopus-assistant__get_abstract_details, mcp__scopus-assistant__get_quota_status
+allowed-tools: Read, Edit, Write, Bash, WebSearch, WebFetch, mcp__scopus-assistant__search_scopus, mcp__scopus-assistant__get_abstract_details, mcp__scopus-assistant__get_quota_status
 ---
 
 # Update works.html from Scopus
@@ -43,9 +43,18 @@ The search response only includes the first author. For every deduped paper, cal
 
 **Limitation:** `get_abstract_details` does **not** return volume/issue/page numbers. So:
 - For papers already in `works.html`, reuse the existing volume/issue/pages/art.-no. text — don't drop it.
-- For a brand-new paper, an Elsevier-style article number can be read from the DOI suffix (e.g. `10.1016/j.cities.2026.107026` → `art. no. 107026`); the volume number is usually unavailable from the MCP. Do **not** invent a volume — list `art. no. XXXXX` without a volume, or treat the paper as **in press** if it has no locator and a current/future cover date. If the user can supply the volume/pages, ask or let them fill it in.
+- For a brand-new paper, an Elsevier-style article number can be read from the DOI suffix (e.g. `10.1016/j.cities.2026.107026` → `art. no. 107026`).
 
-Treat a paper with no volume/pages and a current/future cover date as **in press**.
+## Step 4b — Fill missing metadata from Google Scholar / the web
+
+Whenever a paper's volume, issue, or page range is still missing after Steps 4–5 (typically a newly added paper), look it up on the web before falling back to "in press":
+
+1. `WebSearch` for the exact paper title (optionally + journal name + author), e.g. `"Mosques in Belgium: Spatial distribution, agglomeration patterns and underserved areas" Cities`. Prefer the Google Scholar result, the publisher/journal page, or the DOI landing page.
+2. `WebFetch` the most authoritative hit (publisher page or `https://doi.org/<doi>`) and extract **volume, issue, page range, and/or article number**.
+3. Cross-check the title and DOI match before trusting the numbers. Never invent a volume or page range — only use values you actually found.
+4. If, after searching, the volume/pages genuinely don't exist yet (true early-access / accepted paper with a current or future cover date), then treat it as **in press** (journal name only, no locator).
+
+Apply the same `art. no.` vs `pp. START-END` formatting from Step 5 once the numbers are found.
 
 ## Step 5 — Format each entry
 
